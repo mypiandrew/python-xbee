@@ -93,8 +93,8 @@ class DigiMesh(object):
                 {'name': 'parameter',         'len': None}
             ],
             'parsing': [
-                ('parameter', lambda self, original: self._parse_ND_at_response(original))  # Added
-            ]			
+                ('parameter', lambda self, original: self._parse_ND_at_response(original))  # ADDED 
+            ]
         },
         b'\x8A': {
             'name': 'status',
@@ -175,9 +175,9 @@ class DigiMesh(object):
         """
         If the given packet is a successful AT response for an ND
         command, parse the parameter field.
-		
-		Page 141 
-		https://www.digi.com/resources/documentation/digidocs/pdfs/90002126.pdf
+ 
+        Page 141 
+        https://www.digi.com/resources/documentation/digidocs/pdfs/90002126.pdf
         """
         if packet_info['id'] == 'at_response' and \
                 packet_info['command'].lower() == b'nd' and \
@@ -185,64 +185,62 @@ class DigiMesh(object):
             result = {}
 
             # Parse each field directly
-			# MY<CR> (2 bytes) (always 0xFFFE)
-			result['my'] = packet_info['parameter'][0:2]
-			# SH<CR> (4 bytes)
+            # MY<CR> (2 bytes) (always 0xFFFE)
+            result['my'] = packet_info['parameter'][0:2]
+            # SH<CR> (4 bytes)
             result['sh'] = packet_info['parameter'][2:6]
-			# SL<CR> (4 bytes)
+            # SL<CR> (4 bytes)
             result['sl'] = packet_info['parameter'][6:10]
-            
-			# DB<CR> *Contains the detected signal strength of the response in negative dBm units)          
-			# Assuming 1 byte as length not explicitly specified in manual, although this docs
-            # page implies it's 1 byte:
-			# https://www.digi.com/resources/documentation/Digidocs/90001477/reference/r_cmd_db.htm?TocPath=AT%20commands%7CDiagnostic%20commands%7C_____2			
-			# 0x28 - 0x6E (-40 dBm to -110 dBm) [read-only] 
+            # DB<CR> *Contains the detected signal strength of the response in negative dBm units) 
+            # This docs page implies it's 1 byte, not explicitly specified in PDF manual. 
+            # https://www.digi.com/resources/documentation/Digidocs/90001477/reference/r_cmd_db.htm?TocPath=AT%20commands%7CDiagnostic%20commands%7C_____2			
+            # 0x28 - 0x6E (-40 dBm to -110 dBm) [read-only] 
             result['db'] = packet_info['parameter'][10] ## Assumption docs do not specify
-			
-			# NI <CR> (variable, 0-20 bytes plus 0x00 character)
+
+            # NI <CR> (variable, 0-20 bytes plus 0x00 character)
             
-			# First find the node identifier field null terminator
+            # First find the node identifier field null terminator
             null_terminator_index = 11
             while packet_info['parameter'][null_terminator_index:
                                            null_terminator_index+1] != b'\x00':
                 null_terminator_index += 1
-            # NI therefore is everything inbetween
-            # try adding .decode("hex") to this back to ASCII text
-			# https://stackoverflow.com/questions/9641440/convert-from-ascii-string-encoded-in-hex-to-plain-ascii
+            # NI therefor is everything inbetween
+            # try adding .decode("hex") to this 
+            # https://stackoverflow.com/questions/9641440/convert-from-ascii-string-encoded-in-hex-to-plain-ascii
             result['node_identifier'] = \
                 packet_info['parameter'][11:null_terminator_index]
-			
-			# PARENT_NETWORK ADDRESS<CR> (2 bytes)
+
+            # PARENT_NETWORK ADDRESS<CR> (2 bytes)
             result['parent_address'] = \
                 packet_info['parameter'][null_terminator_index+1:
                                          null_terminator_index+3]
-			# DEVICE_TYPE<CR> (1 byte: 0 = Coordinator, 1 = Router, 2 = End Device)							 
+            # DEVICE_TYPE<CR> (1 byte: 0 = Coordinator, 1 = Router, 2 = End Device)
             result['device_type'] = \
                 packet_info['parameter'][null_terminator_index+3:
                                          null_terminator_index+4]
-			# STATUS<CR> (1 byte: reserved)							 
+            # STATUS<CR> (1 byte: reserved)
             result['status'] = \
                 packet_info['parameter'][null_terminator_index+4:
                                          null_terminator_index+5]
-			# PROFILE_ID<CR> (2 bytes)							 
+            # PROFILE_ID<CR> (2 bytes)
             result['profile_id'] = \
                 packet_info['parameter'][null_terminator_index+5:
                                          null_terminator_index+7]
-			# MANUFACTURER_ID<CR> (2 bytes)							 
+            # MANUFACTURER_ID<CR> (2 bytes)
             result['manufacturer'] = \
                 packet_info['parameter'][null_terminator_index+7:
                                          null_terminator_index+9]
 
             # ********** These could be included in the response but are not by default  ****************
-			# DIGI DEVICE TYPE<CR> (4 bytes. Optionally included based on NO settings.)
+            # DIGI DEVICE TYPE<CR> (4 bytes. Optionally included based on NO settings.)
             #result['manufacturer'] = \
             #    packet_info['parameter'][null_terminator_index+9:
             #                             null_terminator_index+13]
-			#
+            #
             # RSSI OF LAST HOP<CR> (1 byte. Optionally included based on NO settings.)
             #result['manufacturer'] = \
             #    packet_info['parameter'][null_terminator_index+13:
-            #                             null_terminator_index+14]										 
+            #                             null_terminator_index+14]
 
             #  ********* Due to optional last two fields this approach is falible on digimesh devices **********
             # Simple check to ensure a good parse (assumes NO setting is as default (0) )
@@ -257,13 +255,13 @@ class DigiMesh(object):
         else:
             return packet_info['parameter']
 
-	
+
     def __init__(self, *args, **kwargs):
         """
         Call the super class constructor to save the serial port
         """
         super(DigiMesh, self).__init__(*args, **kwargs)
-		
+
   def _parse_samples_header(self, io_bytes):
         """
         _parse_samples_header: binary data in XBee IO data format ->
@@ -276,17 +274,16 @@ class DigiMesh(object):
 
         _parse_samples_header is overloaded here to support the additional
         IO lines offered by the XBee S8 SMT Digimesh Module
-		
-		++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-        
-		Taken from Zigbee method but appears just as valid for digimesh
-        
-		Note the additional IO lines provided by the SPI interface (P5-P9) cannot 
+
+        ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+        Taken from Zigbee method but appears just as valid for digimesh
+
+        Note the additional IO lines provided by the SPI interface (P5-P9) cannot 
         be read back/monitored these can be either SPI or Dig Out functions 
         only (not Dig in) 
-		
-		https://www.digi.com/resources/documentation/Digidocs/90001506/reference/r_queried_sampling.htm
-		
+        
+        https://www.digi.com/resources/documentation/Digidocs/90001506/reference/r_queried_sampling.htm
+
         """
         header_size = 4
 
@@ -317,4 +314,3 @@ class DigiMesh(object):
         aio_chans.sort()
 
         return (sample_count, dio_chans, aio_chans, dio_mask, header_size)
-		
