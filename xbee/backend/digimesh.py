@@ -189,18 +189,20 @@ class DigiMesh(object):
             result['my'] = packet_info['parameter'][0:2]
             # SH<CR> (4 bytes)
             result['sh'] = packet_info['parameter'][2:6]
-            # SL<CR> (4 bytes)
+            # SL<CR> (4 bytes) Note: For some reason this often gets shown partially/fully as ASCII not Hex Bytes
             result['sl'] = packet_info['parameter'][6:10]
             # DB<CR> *Contains the detected signal strength of the response in negative dBm units) 
             # This docs page implies it's 1 byte, not explicitly specified in PDF manual. 
             # https://www.digi.com/resources/documentation/Digidocs/90001477/reference/r_cmd_db.htm?TocPath=AT%20commands%7CDiagnostic%20commands%7C_____2			
             # 0x28 - 0x6E (-40 dBm to -110 dBm) [read-only] 
-            result['db'] = packet_info['parameter'][10] ## Assumption docs do not specify
+            # ------------------------------------------------------------
+            # Not included in the S8 Module I had
+            #result['db'] = packet_info['parameter'][10] ## Assumption docs do not specify
 
             # NI <CR> (variable, 0-20 bytes plus 0x00 character)
             
             # First find the node identifier field null terminator
-            null_terminator_index = 11
+            null_terminator_index = 10
             while packet_info['parameter'][null_terminator_index:
                                            null_terminator_index+1] != b'\x00':
                 null_terminator_index += 1
@@ -208,7 +210,7 @@ class DigiMesh(object):
             # try adding .decode("hex") to this 
             # https://stackoverflow.com/questions/9641440/convert-from-ascii-string-encoded-in-hex-to-plain-ascii
             result['node_identifier'] = \
-                packet_info['parameter'][11:null_terminator_index]
+                packet_info['parameter'][10:null_terminator_index]
 
             # PARENT_NETWORK ADDRESS<CR> (2 bytes)
             result['parent_address'] = \
