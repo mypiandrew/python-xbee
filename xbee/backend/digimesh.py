@@ -262,7 +262,7 @@ class DigiMesh(object):
         """
         super(DigiMesh, self).__init__(*args, **kwargs)
 
-  def _parse_samples_header(self, io_bytes):
+    def _parse_samples_header(self, io_bytes):
         """
         _parse_samples_header: binary data in XBee IO data format ->
                         (int, [int ...], [int ...], int, int)
